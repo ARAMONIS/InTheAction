@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>IN THE ACTION</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" /> 
+    <meta http-equiv="cache-control" content="max-age=0" /> 
+    <meta http-equiv="Pragma" content="no-cache" /> 
+    <meta http-equiv="Expires" content="0" /> 
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+ <meta name="theme-color" content="#000000">
+ <link rel="icon" href=​"/favicon.png" type="image/png" sizes="32x32">
+<link rel="shortcut icon" href=​"/favicon.png" type="image/png" sizes="32x32">
+ <meta property="og:title" content="IN THE ACTION"/> 
+<meta property="og:description" content=""/> 
+<meta property="og:image" content="ogImage.jpg"/> 
+<meta property="og:type" content="website"/> 
+
+ <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>    
+   <div id="progressBar">
+      <h1>  IN THE ACTION </h1>
+          <div id="progressBarOuter">
+          <div id="progressBarInner">
+          </div></div>
+   </div>
+     <div id="rotateDevice"></div>
+ <canvas id="scene" class="scene" width="500" height="500"></canvas>
+  <div id="fps" class="fps"></div>
+  <div id="bg" class="bg"></div>
+  <div id="menuContainer"></div>
+    <div id="arrowLeft"></div>
+  <div id="arrowRight"></div>
+  <div id="arrowUp"></div>
+  <div id="arrowDown"></div>
+    <div id="rotateLeft"></div>
+  <div id="rotateRight"></div>
+  <div id="shoot"></div>
+  <div id="car"></div>
+  <div id="accel"></div>
+  <div id="brake"></div>
+<div id="radio"></div>
+   
+<div id="playerStatusContainer">
+    $10000
+  <div id="healthIcon1" class="healthFilled"></div>
+  <div id="healthIcon2"></div>
+  <div id="healthIcon3"></div>
+  <div id="healthIcon4"></div>
+  <div id="healthIcon5"></div>
+  <div id="healthIcon6"></div>
+  <div id="healthIcon7"></div>
+  <div id="healthIcon8"></div>
+  <div id="healthIcon9"></div>
+  <div id="healthIcon10"></div>
+</div>
+
+</body>
+
+<script src="js/gui.js"></script>
+ <script src="js/babylon/babylon.min.js"></script>
+ <script src="js/babylon/babylon.loaders.js"></script>
+  <script src="js/babylon/babylon.materials.js"></script>
+  <script src="js/babylon/babylon.waterMaterial.js"></script>
+  <script src="js/box2d/box2dweb.js"></script>
+ <script src="js/config.js"></script>
+ 
+<script>
+  try{
+
+document.addEventListener("touchstart",function(e){
+ document.body.requestFullscreen(); 
+});
+
+document.addEventListener("touchend",function(e){
+ document.body.requestFullscreen(); 
+});
+
+/*
+document.addEventListener("keydown",function(e){
+ document.body.requestFullscreen(); 
+});
+  */
+  
+  // Main engine gefines
+  
+  
+var canvas = document.getElementById("scene"); 
+var engine = new BABYLON.Engine(canvas,false,{
+ stencil:true,}, true);
+
+
+var scene = new BABYLON.Scene(engine);
+scene.pause=true;
+
+
+var highlightLayer= new BABYLON.HighlightLayer("highlight", scene);
+
+scene.clearColor=new BABYLON.Color3(0.5,0.5,1);
+
+var options = new BABYLON.SceneOptimizerOptions
+    .HighDegradationAllowed();
+  options.targetFrameRate=60;
+   /*
+ options.addOptimization(new BABYLON.MergeMeshesOptimization(1,2));
+
+options.addOptimization(new BABYLON.HardwareScalingOptimization(2,2)); */
+
+var optimizer = new BABYLON.SceneOptimizer(scene, options);
+
+
+//optimizer.start();
+
+ scene.performancePriority=BABYLON.ScenePerformancePriority.Agressive;
+scene.useGeometryIdsMap=true;
+scene.useMaterialMeshMap=true;
+scene.pointerMovePredicate = () => false;
+scene.pointerDownPredicate = () => false;
+scene.pointerUpPredicate = () => false;
+scene.blockMaterialDirtyMechanism = true;
+
+//scene.debugLayer.show();
+
+
+window.addEventListener("resize", function (){ engine.resize(); }) 
+
+
+
+var camera = new BABYLON.ArcRotateCamera("camera", 0,1,1,new BABYLON.Vector3(0, 2, 0), scene);
+
+camera.attachControl(canvas,true);
+camera.maxZ=100;
+
+
+var light= new BABYLON.HemisphericLight("DirectionalLight", new BABYLON.Vector3(0, 1000, 0), scene); 
+ 
+
+
+//var shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
+
+scene.autoClear = false; // Color buffer
+scene.autoClearDepthAndStencil = false;
+
+
+ //physycs integration
+ 
+/*
+var havokInstance;
+  HavokPhysics({ 
+    locateFile: (file)=>{  
+return "js/babylon/havok/HavokPhysics.wasm";  
+   }).then((havok) => { 
+    havokInstance = havok;
+    var hk = new BABYLON.HavokPlugin(true, havok); 
+scene.enablePhysics(
+new BABYLON.Vector3(0,-9, 0), hk
+);
+  }); */
+
+
+ 
+
+
+// RESOURCES
+ 
+
+var loadedMeshes={};
+
+  // LOADERS
+
+
+var loader = new BABYLON.AssetsManager(scene);
+loader.useDefaultLoadingScreen = false;
+     //mesh
+ for(var name in meshLoadList){
+     var file=meshLoadList[name];
+ var meshTask= loader.addMeshTask(name,"",file,""); 
+ meshTask.name=name;
+ meshTask.onSuccess = function (task) {
+  var m=task.loadedMeshes[0];
+  loadedMeshes[task.name]=m;
+  }
+  meshTask.onError = function (task, message, exception) {
+ alert(task.name+"/"+message+ "/"+exception);
+}
+    }
+    //sounds
+    
+    for(var snd of soundLoadList){
+var binaryTask = loader. addBinaryFileTask("task", snd[1]);
+   binaryTask.snd=snd;
+binaryTask.onSuccess = function (task) {
+ var s=new BABYLON.Sound(task.snd[0], task.data, scene,()=>{},{});
+binaryTask.onError=function(t,m,e){
+ alert(t.name+"/"+m+ "/"+e);
+       }
+}
+    }  
+   //location
+  var locationTask = loader.addImageTask("locationImage", "location.png");
+locationTask.onSuccess = function (task) {
+ scene.locationImage=task.image;
+   };
+   locationTask = loader.addImageTask("carWay", "carWay.png");
+locationTask.onSuccess = function (task) {
+ scene.carWayImage=task.image;
+   };
+
+
+/*
+var locationTask = loader.addTextureTask("testTxr", "textures/grass1.png");
+locationTask.onSuccess = function (task) {
+ alert(task.texture);
+ alert( 
+ scene.getTextureByName("testTxr")
+ );
+};
+*/
+
+loader.load();
+
+loader.onProgress = function (remainingCount, totalCount, lastTask) {
+ var loaded=totalCount-remainingCount;
+document.getElementById("progressBarInner")
+.style.width=loaded/(totalCount/100)+"%";
+engine.loadingUIText = "Загрузка: "+
+(totalCount-remainingCount)+"/"+totalCount;
+
+};
+
+
+var divFps = document.getElementById("fps"); 
+var DEBUG_STATE={};
+
+
+loader.onFinish=function(){
+ document.getElementById("progressBar").remove();
+ onGameLoad();
+ scene.getSoundByName("tap").play();
+engine.runRenderLoop(()=>{
+   if(scene.pause){ return; }
+   try{
+gameLoop();
+scene.render();
+DEBUG_STATE.fps=engine.getFps().toFixed();
+ divFps.innerHTML="";
+      for(var i in DEBUG_STATE){
+      divFps.innerHTML+=i+" : "+
+      DEBUG_STATE[i]+"<br>";
+       }
+  }catch(e){ alert("render loop"+e); }
+});
+}
+
+
+ for(var txr of textureLoadList){
+ var mat = new BABYLON.StandardMaterial(txr[0]);
+var texture = new BABYLON.Texture(txr[1], scene);
+mat.diffuseTexture=texture;
+mat.specularColor=new BABYLON.Color3(0,0,0);
+ }
+ 
+ 
+
+  // ADD MESH
+
+function addMesh(name){
+var m1=loadedMeshes[name];
+ if(m1==null){
+    alert("mesh "+name+" not loaded");
+    return ;
+  }
+ m1.setParent(null);
+ m1.setEnabled(true);
+var m2=m1.clone("m"+Math.random());
+ m2.setEnabled(true);
+ m2.setParent(null);
+//shadowGenerator.getShadowMap().renderList.push(m2); 
+return m2;
+}
+
+
+function saveText(text) {
+  var content = [text];
+  var bl = new Blob(content, {type: "text/plain"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(bl);
+  a.download = "map.txt";
+  a.hidden = true;
+  document.body.appendChild(a);
+  a.click();
+}
+
+
+
+function saveImage(img){
+  var link = document.createElement('a');
+link.download = "ITA_"+Math.random()+".png";
+  link.href = img.toDataURL()
+  link.click();
+}
+
+ }catch(e){ alert("index.html"+e) };
+
+
+  
+</script>
+
+   
+  <script src="js/box2d/box2dPhysics.js"></script>
+<script src="js/sounds.js?999999999999"></script>
+<script src="js/cityGenerator.js?9999999999"></script>
+<script src="js/car.js?9999999999"></script>
+<script src="js/weapon.js?999999999"></script>
+<script src="js/man.js?999999999"></script>
+<script src="js/main.js?9999999999"></script>
+<script src="js/effect.js?9999999999"></script>
+<script src="js/checkDistance.js?9999999999"></script>
+
+ 
+</html>
+
+
